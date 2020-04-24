@@ -1,8 +1,13 @@
-const inquirer = require('inquirer')
-const { format } = require('date-fns')
+process.chdir(__dirname)
 require('dotenv').config()
+const inquirer = require('inquirer')
+const argv = require('minimist')(process.argv.slice(2))
+const { format } = require('date-fns')
 
 module.exports = async () => {
+  const args = require('./utils/handleArgs')(argv)
+  const showAll = Object.keys(args).length === 0
+  const { weather, mood, journal, todos, save } = args
   const date = new Date()
   const greeting = `Goodmorning! It's ${format(date, 'EEEE MMMM dd, yyyy')}`
   
@@ -10,61 +15,80 @@ module.exports = async () => {
   console.info(greeting)
   console.info('Try your best today ❤️')
   console.info(''.padStart(greeting.length, '-'))
-    
+ 
   let data = { date }
 
-  const w = await inquirer
-    .prompt([
-      {
-        type: 'confirm',
-        name: 'weather',
-        message: 'Do you want to know the weather?',
-      },
-    ])
+  if (showAll) {
+    const w = await inquirer
+      .prompt([
+        {
+          type: 'confirm',
+          name: 'weather',
+          message: 'Do you want to know the weather?',
+        },
+      ])
 
-  if (w.weather) {
+    if (w.weather) {
+      data = { ...data, ...(await require('./cmds/weather')()) }
+    }
+
+    const m = await inquirer
+      .prompt([
+        {
+          type: 'confirm',
+          name: 'mood',
+          message: 'Do you want to share your mood?',
+        },
+      ])
+
+    if (m.mood) {
+      data.mood = await require('./cmds/mood')()
+    }
+
+    const j = await inquirer
+      .prompt([
+        {
+          type: 'confirm',
+          name: 'journal',
+          message: 'Do you want to share any thoughts today?',
+        },
+      ])
+
+    if (j.journal) {
+      data.journal = await require('./cmds/journal')()
+    }
+
+    const t = await inquirer
+      .prompt([
+        {
+          type: 'confirm',
+          name: 'todos',
+          message: 'Do you want to work on your todos?',
+        },
+      ])
+
+    if (t.todos) {
+      data.todos = await require('./cmds/todos')()
+    }
+  }
+
+  if (weather) {
     data = { ...data, ...(await require('./cmds/weather')()) }
   }
 
-  const m = await inquirer
-    .prompt([
-      {
-        type: 'confirm',
-        name: 'mood',
-        message: 'Do you want to share your mood?',
-      },
-    ])
-
-  if (m.mood) {
+  if (mood) {
     data.mood = await require('./cmds/mood')()
   }
 
-  const j = await inquirer
-    .prompt([
-      {
-        type: 'confirm',
-        name: 'journal',
-        message: 'Do you want to share any thoughts today?',
-      },
-    ])
-
-  if (j.journal) {
+  if (journal) {
     data.journal = await require('./cmds/journal')()
   }
 
-  const t = await inquirer
-    .prompt([
-      {
-        type: 'confirm',
-        name: 'todos',
-        message: 'Do you want to work on your todos?',
-      },
-    ])
-
-  if (t.todos) {
+  if (todos) {
     data.todos = await require('./cmds/todos')()
   }
 
-  console.info('Thanks for checking in 🙂 I believe in you!')
-  await require('./utils/db').save(data)
+  if (showAll || save) {
+    await require('./utils/db').save(data)
+  }
 }
