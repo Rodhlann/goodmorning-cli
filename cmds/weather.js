@@ -26,7 +26,7 @@ module.exports = async () => {
 
     spinner.stop()
     
-    console.info(`It's ${temperature}º out today`)
+    console.info(`It's ${temperature}º today in ${city}, ${state}`)
     console.info(feelslike === temperature ? 'And it feels like it too!' : `But it feels like ${feelslike}º`)
     console.info(`With humidity around ${humidity}%`)
     console.info(precip ? 'And a bit of rain' : 'But it\'s nice and dry!')
